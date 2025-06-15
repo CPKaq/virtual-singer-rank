@@ -22,7 +22,7 @@ const data = ref([]);
 async function searchByVolume(volume) {
   try {
     const response = await fetch(`https://vc-weekly.cpk.moe/api?volume=${volume}`);
-    this.data = await response.json();
+    data.value = await response.json();
   } catch (error) {
     console.error('请求失败', error);
   }
