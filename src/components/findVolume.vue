@@ -1,8 +1,10 @@
 <script setup>
 import { ref } from 'vue'
-import { CdxButton, CdxTextInput, CdxTable } from '@wikimedia/codex'
+import { CdxButton, CdxTextInput, CdxProgressBar, CdxTable } from '@wikimedia/codex'
 
-const inputValue = ref(0)
+const inputValue = ref(0);     // 输入的期号
+const isLoading = ref(false);  // 加载状态
+const tableCaption = ref(' ');      // 表格标题
 
 const columns = [
   { id: 'volume', label: '期号', textAlign: 'number'},
@@ -12,7 +14,7 @@ const columns = [
   { id: 'view', label: '播放', textAlign: 'number'},
   { id: 'reply', label: '评论', textAlign: 'number'},
   { id: 'danmaku', label: '弹幕', textAlign: 'number'},
-  { id: 'favorite', label: '收藏数', textAlign: 'number'},
+  { id: 'favorite', label: '收藏', textAlign: 'number'},
   { id: 'corrA', label: '修正A', textAlign: 'number'},
   { id: 'corrB', label: '修正B', textAlign: 'number'}
 ];
@@ -20,11 +22,32 @@ const columns = [
 const data = ref([]);
   
 async function searchByVolume(volume) {
+  data.value = [];
+  isLoading.value = true;
+  tableCaption.value = ' ';
+
   try {
     const response = await fetch(`https://vc-weekly.cpk.moe/api?volume=${volume}`);
     data.value = await response.json();
   } catch (error) {
     console.error('请求失败', error);
+  } finally {
+    isLoading.value = false;
+    tableCaption.value = rankingTitle(volume);
+  }
+}
+
+function rankingTitle(volume) {
+  if (volume < 1) {
+    return ' ';
+  } else if (volume < 54) {
+    return `洛天依新曲排行榜%${volume}`;
+  } else if (volume < 118) {
+    return `中文VOCALOID新曲排行榜%${volume}`;
+  } else if (volume < 523) {
+    return `周刊VOCALOID中文排行榜♪${volume}`;
+  } else {
+    return `周刊虚拟歌手中文曲排行榜♪${volume}`;
   }
 }
 </script>
@@ -34,6 +57,9 @@ async function searchByVolume(volume) {
     <cdx-text-input v-model="inputValue" class="searchInput"></cdx-text-input>
     <cdx-button @click="searchByVolume(inputValue)">查询</cdx-button>
   </div>
+  <div class="progressBar">
+    <cdx-progress-bar v-if="isLoading" aria-label="ProgressBar" />
+  </div>
   <div class="searchResult">
     <cdx-table
     caption="查询结果"
@@ -42,7 +68,7 @@ async function searchByVolume(volume) {
       :header
     >
       <template #header>
-        周刊VOCALOID中文排行榜♪{{ inputValue }}
+        {{ tableCaption }}
       </template>
     </cdx-table>
   </div>
@@ -60,5 +86,9 @@ async function searchByVolume(volume) {
 
 .searchInput {
   width: 100%;
+}
+
+.searchResult {
+  white-space: nowrap;
 }
 </style>
